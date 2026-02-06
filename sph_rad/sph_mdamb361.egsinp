@@ -1,0 +1,200 @@
+#base/template egsinp file
+
+:start media definition:
+    ae  = 0.512
+    ap = 0.001
+    ue = 50
+    up = 50
+    :start tissue:
+        density correction file    = estar_unit_tissue
+    :stop tissue:
+
+    :start water:
+        density correction file    = estar_liqwater_icru90
+    :stop water:
+    
+:stop media definition:
+
+:start MC transport parameter:
+Global Ecut = 0.512
+Global Pcut = 0.01
+:stop MC transport parameter:
+
+:start geometry definition:
+
+    :start geometry:
+        name        = boxgeom
+        library     = egs_box
+        box size    = 0.05 0.05 0.05
+        :start media input:
+            media = tissue
+            #media = tissue
+        :stop media input:
+    :stop geometry:
+
+    :start geometry:
+        library = egs_spheres
+        name    = cell1
+        midpoint = 0 0 8.81e-4
+        radii = 5.8e-4 8.8e-4 8.81e-4 
+        :start media input:
+            media = water
+        :stop media input:
+    :stop geometry:
+
+    :start geometry:
+        library = egs_spheres
+        name    = cell2
+        midpoint = 0 0 -8.81e-4
+        radii = 5.8e-4 8.8e-4 8.81e-4 
+        :start media input:
+            media = water
+        :stop media input:
+    :stop geometry:
+
+    :start geometry: 
+        name        = target
+        library     = egs_genvelope
+        base geometry = boxgeom
+        inscribed geometries = cell1 cell2
+    :stop geometry:
+
+    :start geometry: 
+        name        = main
+        library     = egs_genvelope
+        base geometry = boxgeom
+        inscribed geometries = cell1 cell2
+    :stop geometry:
+
+
+    simulation geometry = main
+
+:stop geometry definition:
+
+:start source definition: #1 nucleus 2 cytoplasm 3 membrane
+    :start source:
+        name                = source_region
+        library             = egs_isotropic_source
+        charge              = -1
+        geometry            = main
+        region selection    = IncludeSelected
+        selected regions    = 1
+        :start shape:
+            type     = sphere
+            midpoint    = 0 0 8.81e-4
+            radius = 8.81e-4 
+            :start media input:
+                media = water
+            :stop media input:
+        :stop shape:
+        :start spectrum:
+            type = tabulated spectrum #tc99m
+            energies = 1.91E-02	2.23E-02	2.55E-02	1.83E-04	2.59E-03	3.06E-03	3.53E-03	1.25E-04	3.50E-04	3.88E-05	8.47E-06	1.45E-01	1.67E-01	1.71E-01	2.19E-01	2.41E-01	2.45E-01
+            probabilities = 1.03E-01	3.94E-02	3.60E-03	1.51E-01	8.35E-01	1.90E-01	1.09E-02	9.15E-01	2.09	2.54	7.82	8.24E-02	1.00E-02	1.40E-03	5.21E-02	9.10E-03	1.90E-03
+            spectrum type = 2
+        :stop spectrum:
+    :stop source:
+
+    simulation source = source_region
+
+:stop source definition:
+
+:start run control:
+    ncase = 5e7
+    #calculation = combine
+:stop run control:
+
+:start scoring options:
+    :start calculation geometry:
+        geometry name = main
+        cavity regions = 1 2 3
+        cavity mass = 2.86428569843488E-09
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+    :start calculation geometry: #measure dose to nucleus
+        geometry name = main
+        cavity regions = 1
+        cavity mass = 8.17283E-10
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+    :start calculation geometry: #measure dose to cytoplasm
+        geometry name = main
+        cavity regions = 2
+        cavity mass = 2.03726E-09
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+    :start calculation geometry: #measure dose to membrane/surface
+        geometry name = main
+        cavity regions = 3
+        cavity mass = 9.74246E-12
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+    :start calculation geometry: #measure dose to nucleus
+        geometry name = main
+        cavity regions = 4
+        cavity mass = 8.17283E-10
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+    :start calculation geometry: #measure dose to cytoplasm
+        geometry name = main
+        cavity regions = 5
+        cavity mass = 2.03726E-09
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+    :start calculation geometry: #measure dose to membrane/surface
+        geometry name = main
+        cavity regions = 6
+        cavity mass = 9.74246E-12
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+    :start calculation geometry: #measure total dose
+        geometry name = main
+        cavity regions = 4 5 6
+        cavity mass = 2.86428569843488E-09
+        cavity geometry = main
+        enhance regions = -1
+        enhancement = -128
+    :stop calculation geometry:
+
+:stop scoring options:
+
+:start variance reduction:
+    cs enhancement = 0 # 0 (XCSE off), >0 (XCSE on)
+    TmpPhsp = 0   # i.e., score phase space and use it once in each specified
+                  # sub-geometry
+    :start range rejection:
+        rejection = 512
+        Esave     = 0.512 # i.e. no range rejection but Russian Roulette
+        cavity geometry = main # since each geometry can have its own
+                                 # cavity geometry this is just a dummy
+        rejection range medium = tissue
+    :stop range rejection:
+:stop variance reduction:
+
+:start rng definition:
+    type            = ranmar      # generator type
+    initial seeds   = 2024     # initial seeds
+    high resolution = no         # no (default), yes
+:stop rng definition:
+
